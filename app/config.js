@@ -116,6 +116,8 @@ const getDeprecatedCSS = function(config) {
 };
 exports.getDeprecatedCSS = getDeprecatedCSS;
 
+// temporary disable this function since this is too noisy
+/* eslint no-unused-vars: 0 */
 const checkDeprecatedConfig = function() {
   if (!cfg.config) {
     return;
