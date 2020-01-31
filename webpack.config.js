@@ -7,11 +7,60 @@ const nodeEnv = process.env.NODE_ENV || 'development';
 const isProd = nodeEnv === 'production';
 
 module.exports = [
+  /*{
+    mode: 'none',
+    name: 'hyper-app',
+    resolve: {
+      extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
+    },
+    entry: './app/index.js',
+    output: {
+      path: path.join(__dirname, 'target'),
+      filename: 'index.js'
+    },
+    module: {
+      rules: [
+        {
+          test: /\.(js|jsx|ts|tsx)$/,
+          exclude: /node_modules/,
+          loader: 'babel-loader'
+        }
+      ]
+    },
+    plugins: [
+      new Copy([
+        {
+          from: './app/*.html',
+          ignore: ['/node_modules/'],
+          to: '.',
+          flatten: true
+        },
+        {
+          from: './app/*.json',
+          ignore: ['/node_modules/'],
+          to: '.',
+          flatten: true
+        },
+        {
+          from: './app/keymaps/*.json',
+          ignore: ['/node_modules/'],
+          to: './keymaps',
+          flatten: true
+        },
+        {
+          from: './app/static',
+          to: './static'
+        }
+      ])
+    ],
+    target: 'electron-main'
+  },*/
   {
     name: 'hyper',
     resolve: {
-      extensions: ['.js', '.jsx']
+      extensions: ['.js', '.jsx', '.ts', '.tsx']
     },
+    mode: 'none',
     devtool: isProd ? 'hidden-source-map' : 'cheap-module-source-map',
     entry: './lib/index.js',
     output: {
@@ -51,13 +100,14 @@ module.exports = [
         }
       ])
     ],
-    target: 'electron'
+    target: 'electron-renderer'
   },
   {
     name: 'hyper-cli',
     resolve: {
       extensions: ['.js', '.jsx', '.json']
     },
+    mode: 'none',
     devtool: isProd ? 'none' : 'cheap-module-source-map',
     entry: './cli/index.js',
     output: {
@@ -69,11 +119,15 @@ module.exports = [
         {
           test: /\.(js|jsx)$/,
           exclude: /node_modules/,
-          loader: 'babel-loader'
+          use: {
+            loader: 'babel-loader'
+          }
         },
         {
           test: /index.js/,
-          loader: 'shebang-loader',
+          use: {
+            loader: 'shebang-loader'
+          },
           include: [/node_modules\/rc/]
         }
       ]

@@ -107,128 +107,133 @@ const url = 'file://' + resolve(isDev ? __dirname : app.getAppPath(), 'index.htm
 //eslint-disable-next-line no-console
 console.log('electron will open', url);
 
-app.on('ready', () =>
-  installDevExtensions(isDev)
-    .then(() => {
-      function createWindow(fn, options = {}) {
-        const cfg = plugins.getDecoratedConfig();
+function createWindow(fn, options = {}) {
+  let cfg = plugins.getDecoratedConfig();
+  Object.assign(cfg, {transparent: true});
 
-        const winSet = config.getWin();
-        let [startX, startY] = winSet.position;
+  const winSet = config.getWin();
+  let [startX, startY] = winSet.position;
 
-        const [width, height] = options.size ? options.size : cfg.windowSize || winSet.size;
-        const {screen} = require('electron');
+  const [width, height] = options.size ? options.size : cfg.windowSize || winSet.size;
+  const {screen} = require('electron');
 
-        const winPos = options.position;
+  const winPos = options.position;
 
-        // Open the new window roughly the height of the header away from the
-        // previous window. This also ensures in multi monitor setups that the
-        // new terminal is on the correct screen.
-        const focusedWindow = BrowserWindow.getFocusedWindow() || app.getLastFocusedWindow();
-        // In case of options defaults position and size, we should ignore the focusedWindow.
-        if (winPos !== undefined) {
-          [startX, startY] = winPos;
-        } else if (focusedWindow) {
-          const points = focusedWindow.getPosition();
-          const currentScreen = screen.getDisplayNearestPoint({
-            x: points[0],
-            y: points[1]
-          });
+  // Open the new window roughly the height of the header away from the
+  // previous window. This also ensures in multi monitor setups that the
+  // new terminal is on the correct screen.
+  const focusedWindow = BrowserWindow.getFocusedWindow() || app.getLastFocusedWindow();
+  // In case of options defaults position and size, we should ignore the focusedWindow.
+  if (winPos !== undefined) {
+    [startX, startY] = winPos;
+  } else if (focusedWindow) {
+    const points = focusedWindow.getPosition();
+    const currentScreen = screen.getDisplayNearestPoint({
+      x: points[0],
+      y: points[1]
+    });
 
-          const biggestX = points[0] + 100 + width - currentScreen.bounds.x;
-          const biggestY = points[1] + 100 + height - currentScreen.bounds.y;
+    const biggestX = points[0] + 100 + width - currentScreen.bounds.x;
+    const biggestY = points[1] + 100 + height - currentScreen.bounds.y;
 
-          if (biggestX > currentScreen.size.width) {
-            startX = 50;
-          } else {
-            startX = points[0] + 34;
-          }
-          if (biggestY > currentScreen.size.height) {
-            startY = 50;
-          } else {
-            startY = points[1] + 34;
-          }
-        }
+    if (biggestX > currentScreen.size.width) {
+      startX = 50;
+    } else {
+      startX = points[0] + 34;
+    }
+    if (biggestY > currentScreen.size.height) {
+      startY = 50;
+    } else {
+      startY = points[1] + 34;
+    }
+  }
 
-        if (!windowUtils.positionIsValid([startX, startY])) {
-          [startX, startY] = config.windowDefaults.windowPosition;
-        }
+  if (!windowUtils.positionIsValid([startX, startY])) {
+    [startX, startY] = config.windowDefaults.windowPosition;
+  }
 
-        const hwin = new Window({width, height, x: startX, y: startY}, cfg, fn);
-        windowSet.add(hwin);
-        hwin.loadURL(url);
+  const hwin = new Window({width, height, x: startX, y: startY, transparent: true}, cfg, fn);
+  windowSet.add(hwin);
+  hwin.loadURL(url);
 
-        // the window can be closed by the browser process itself
-        hwin.on('close', () => {
-          hwin.clean();
-          windowSet.delete(hwin);
-        });
+  // the window can be closed by the browser process itself
+  hwin.on('close', () => {
+    hwin.clean();
+    windowSet.delete(hwin);
+  });
 
-        hwin.on('closed', () => {
-          if (process.platform !== 'darwin' && windowSet.size === 0) {
-            app.quit();
-          }
-        });
+  hwin.on('closed', () => {
+    if (process.platform !== 'darwin' && windowSet.size === 0) {
+      app.quit();
+    }
+  });
 
-        return hwin;
-      }
+  return hwin;
+}
 
-      // when opening create a new window
+const init = () => {
+  // when opening create a new window
+  createWindow();
+
+  // expose to plugins
+  app.createWindow = createWindow;
+
+  // mac only. when the dock icon is clicked
+  // and we don't have any active windows open,
+  // we open one
+  app.on('activate', () => {
+    if (!windowSet.size) {
       createWindow();
+    }
+  });
 
-      // expose to plugins
-      app.createWindow = createWindow;
+  const makeMenu = () => {
+    const menu = plugins.decorateMenu(AppMenu.createMenu(createWindow, plugins.getLoadedPluginVersions));
 
-      // mac only. when the dock icon is clicked
-      // and we don't have any active windows open,
-      // we open one
-      app.on('activate', () => {
-        if (!windowSet.size) {
-          createWindow();
+    // If we're on Mac make a Dock Menu
+    if (process.platform === 'darwin') {
+      const dockMenu = Menu.buildFromTemplate([
+        {
+          label: 'New Window',
+          click() {
+            createWindow();
+          }
         }
-      });
+      ]);
+      app.dock.setMenu(dockMenu);
+    }
 
-      const makeMenu = () => {
-        const menu = plugins.decorateMenu(AppMenu.createMenu(createWindow, plugins.getLoadedPluginVersions));
+    Menu.setApplicationMenu(AppMenu.buildMenu(menu));
+  };
 
-        // If we're on Mac make a Dock Menu
-        if (process.platform === 'darwin') {
-          const dockMenu = Menu.buildFromTemplate([
-            {
-              label: 'New Window',
-              click() {
-                createWindow();
-              }
-            }
-          ]);
-          app.dock.setMenu(dockMenu);
-        }
-
-        Menu.setApplicationMenu(AppMenu.buildMenu(menu));
-      };
-
-      plugins.onApp(app);
-      makeMenu();
-      plugins.subscribe(plugins.onApp.bind(undefined, app));
-      config.subscribe(makeMenu);
-      if (!isDev) {
-        // check if should be set/removed as default ssh protocol client
-        if (config.getConfig().defaultSSHApp && !app.isDefaultProtocolClient('ssh')) {
-          //eslint-disable-next-line no-console
-          console.log('Setting Hyper as default client for ssh:// protocol');
-          app.setAsDefaultProtocolClient('ssh');
-        } else if (!config.getConfig().defaultSSHApp && app.isDefaultProtocolClient('ssh')) {
-          //eslint-disable-next-line no-console
-          console.log('Removing Hyper from default client for ssh:// protocol');
-          app.removeAsDefaultProtocolClient('ssh');
-        }
-        installCLI(false);
-      }
-    })
-    .catch(err => {
+  plugins.onApp(app);
+  makeMenu();
+  plugins.subscribe(plugins.onApp.bind(undefined, app));
+  config.subscribe(makeMenu);
+  if (!isDev) {
+    // check if should be set/removed as default ssh protocol client
+    if (config.getConfig().defaultSSHApp && !app.isDefaultProtocolClient('ssh')) {
       //eslint-disable-next-line no-console
-      console.error('Error while loading devtools extensions', err);
-    })
+      console.log('Setting Hyper as default client for ssh:// protocol');
+      app.setAsDefaultProtocolClient('ssh');
+    } else if (!config.getConfig().defaultSSHApp && app.isDefaultProtocolClient('ssh')) {
+      //eslint-disable-next-line no-console
+      console.log('Removing Hyper from default client for ssh:// protocol');
+      app.removeAsDefaultProtocolClient('ssh');
+    }
+    installCLI(false);
+  }
+};
+
+app.on('ready', () =>
+  setTimeout(() => {
+    installDevExtensions(isDev)
+      .then(init)
+      .catch(err => {
+        //eslint-disable-next-line no-console
+        console.error('Error while loading devtools extensions', err);
+      });
+  }, 50)
 );
 
 app.on('open-file', (event, path) => {

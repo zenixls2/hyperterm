@@ -21,7 +21,7 @@ const _watch = function() {
       cfg = _import();
       notify('Configuration updated', 'Hyper configuration reloaded!');
       watchers.forEach(fn => fn());
-      checkDeprecatedConfig();
+      //checkDeprecatedConfig();
     }, 100);
   };
 
@@ -97,7 +97,7 @@ exports.getKeymaps = () => {
 exports.setup = () => {
   cfg = _import();
   _watch();
-  checkDeprecatedConfig();
+  //checkDeprecatedConfig();
 };
 
 exports.getWin = win.get;

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "jsx": "react",
-    "target": "es6"
+    "target": "es8"
   },
   "exclude": ["node_modules", "**/node_modules/*", "bin/*", "renderer/*"]
 }

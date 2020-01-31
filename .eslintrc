@@ -1,0 +1,80 @@
+{
+  "plugins": ["react", "prettier"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 8,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true,
+      "impliedStrict": true,
+      "experimentalObjectRestSpread": true
+    },
+    "allowImportExportEverywhere": true
+  },
+  "globals": {
+    "Promise": true,
+    "CONFIG": true,
+    "Set": true
+  },
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true,
+  },
+  "rules": {
+    "func-names": ["error", "as-needed"],
+    "no-shadow": "error",
+    "no-extra-semi": 0,
+    "react/prop-types": 0,
+    "react/react-in-jsx-scope": 0,
+    "react/no-unescaped-entities": 0,
+    "react/jsx-no-target-blank": 0,
+    "react/no-string-refs": 0,
+    "prettier/prettier": [
+      "error",
+      {
+        "printWidth": 120,
+        "tabWidth": 2,
+        "singleQuote": true,
+        "trailingComma": "none",
+        "bracketSpacing": false,
+        "semi": true,
+        "useTabes": false,
+        "parser": "babel",
+        "jsxBracketSameLine": false
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["app/config/config-default.js", ".hyper.js"],
+      "rules": {
+        "prettier/prettier": [
+          "error",
+          {
+            "printWidth": 120,
+            "tabWidth": 2,
+            "singleQuote": true,
+            "trailingComma": "none",
+            "bracketSpacing": false,
+            "semi": true,
+            "useTabes": false,
+            "parser": "babel",
+            "jsxBracketSameLine": false
+          }
+        ]
+      }
+    }
+  ],
+  "settings": {
+    "react": {
+      "pragma": "React",
+      "version": "16.12.0"
+    }
+  }
+}
